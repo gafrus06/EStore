@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Покупки</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/4.5.2/css/bootstrap.min.css">
+  <style>
+    body {
+      background-color: #f8f9fa;
+      color: #000000;
+    }
+    .sidebar {
+      background-color: #5b5e60;
+      height: 100vh;
+      padding: 20px;
+      position: fixed;
+      width: 200px;
+      top: 0;
+      left: 0;
+    }
+    .sidebar a {
+      color: white;
+      text-decoration: none;
+      display: block;
+      padding: 10px;
+    }
+    .sidebar a:hover {
+      background-color: #5b5e60;
+    }
+    .content {
+      margin-left: 220px;
+      padding: 20px;
+    }
+    .table {
+      width: 100%;
+      margin-bottom: 1rem;
+      color: #212529;
+      border-collapse: collapse;
+    }
+    .table th, .table td {
+      border: 1px solid #dee2e6;
+      padding: 8px;
+    }
+    .modal-content {
+      background-color: #5b5e60;
+      color: white;
+    }
+    .modal-header, .modal-footer {
+      border: none;
+    }
+    .form-control, .btn {
+      background-color: #5b5e60;
+      color: white;
+    }
+    .form-control:focus {
+      background-color: #5b5e60;
+      color: white;
+    }
+    #purchaseModal {
+      position: absolute;
+      top: 20%;
+      left: 50%;
+      transform: translate(-50%, -20%);
+    }
+  </style>
+</head>
+<body>
+<div class="sidebar">
+  <h2>Разделы</h2>
+  <a href="http://localhost:8081/items">Электротовары</a>
+  <a href="http://localhost:8081/employee">Сотрудники</a>
+  <a href="http://localhost:8081/purchase">Покупки</a>
+  <a href="#" id="referenceLink">Справочники</a>
+  <div id="referenceSections" style="display: none; margin-left: 10px;">
+    <a href="http://localhost:8081/position-type">Тип должности</a>
+    <a href="http://localhost:8081/shops">Магазины</a>
+    <a href="http://localhost:8081/purchase-type">Типы покупок</a>
+    <a href="http://localhost:8081/electro-type">Типы электротоваров</a>
+  </div>
+</div>
+
+<div class="content">
+  <h2>Система для управления сетью магазинов электроники</h2>
+
+</div>
+
+<script>
+  document.getElementById('referenceLink').onclick = function() {
+    const referenceSections = document.getElementById('referenceSections');
+    referenceSections.style.display = referenceSections.style.display === 'none' ? 'block' : 'none';
+  };
+
+</script>
+
+<script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@4.5.2/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

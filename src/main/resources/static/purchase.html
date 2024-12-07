@@ -1,0 +1,383 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Покупки</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/4.5.2/css/bootstrap.min.css">
+  <style>
+    body {
+      background-color: #f8f9fa;
+      color: #000000;
+    }
+    .sidebar {
+      background-color: #5b5e60;
+      height: 100vh;
+      padding: 20px;
+      position: fixed;
+      width: 200px;
+      top: 0;
+      left: 0;
+    }
+    .sidebar a {
+      color: white;
+      text-decoration: none;
+      display: block;
+      padding: 10px;
+    }
+    .sidebar a:hover {
+      background-color: #5b5e60;
+    }
+    .content {
+      margin-left: 220px;
+      padding: 20px;
+    }
+    .table {
+      width: 100%;
+      margin-bottom: 1rem;
+      color: #212529;
+      border-collapse: collapse;
+    }
+    .table th, .table td {
+      border: 1px solid #dee2e6;
+      padding: 8px;
+    }
+    .modal-content {
+      background-color: #5b5e60;
+      color: white;
+    }
+    .modal-header, .modal-footer {
+      border: none;
+    }
+    .form-control, .btn {
+      background-color: #5b5e60;
+      color: white;
+    }
+    .form-control:focus {
+      background-color: #5b5e60;
+      color: white;
+    }
+    #purchaseModal {
+      position: absolute;
+      top: 20%;
+      left: 50%;
+      transform: translate(-50%, -20%);
+    }
+  </style>
+</head>
+<body>
+<div class="sidebar">
+  <h2>Разделы</h2>
+  <a href="http://localhost:8081/items">Электротовары</a>
+  <a href="http://localhost:8081/employee">Сотрудники</a>
+  <a href="http://localhost:8081/purchase">Покупки</a>
+  <a href="#" id="referenceLink">Справочники</a>
+  <div id="referenceSections" style="display: none; margin-left: 10px;">
+    <a href="http://localhost:8081/position-type">Тип должности</a>
+    <a href="http://localhost:8081/shops">Магазины</a>
+    <a href="http://localhost:8081/purchase-type">Типы покупок</a>
+    <a href="http://localhost:8081/electro-type">Типы электротоваров</a>
+  </div>
+</div>
+
+<div class="content">
+  <h2>Покупки</h2>
+  <table class="table">
+    <thead>
+    <tr>
+      <th>ID</th>
+      <th>Электротовар ID</th>
+      <th>Сотрудник ID</th>
+      <th>Магазин ID</th>
+      <th>Дата покупки</th>
+      <th>Тип ID</th>
+      <th>Действия</th>
+    </tr>
+    </thead>
+    <tbody id="purchaseTableBody"></tbody>
+  </table>
+  <button class="btn btn-primary" onclick="openPurchaseForm()">Добавить покупку</button>
+  <hr>
+  <button class="btn btn-secondary" onclick="document.getElementById('csvFileInput').click()">Импорт из CSV</button>
+  <input type="file" id="csvFileInput" style="display: none;" accept=".csv" onchange="importPurchaseCSV()">
+  <button class="btn btn-secondary" onclick="sortPurchases()">Отсортировать</button>
+  <div id="formContainer" style="display:none;">
+    <div class="modal" id="purchaseModal" tabindex="-1">
+      <div class="modal-dialog">
+        <div class="modal-content">
+          <div class="modal-header"><h5 class="modal-title" id="modalTitle">Добавить покупку</h5>
+            <button type="button" class="close" onclick="closePurchaseForm()">&times;</button>
+          </div>
+
+          <div class="modal-body">
+            <form id="purchaseForm">
+              <input type="hidden" id="purchaseId">
+              <div class="form-group">
+                <label for="electroItemId">Электротовар ID</label>
+                <input type="number" class="form-control" id="electroItemId" required>
+              </div>
+              <div class="form-group">
+                <label for="employeeId">Сотрудник ID</label>
+                <input type="number" class="form-control"id="employeeId" required>
+              </div>
+              <div class="form-group">
+                <label for="shopId">Магазин ID</label>
+                <input type="number" class="form-control" id="shopId" required>
+              </div>
+              <div class="form-group">
+                <label for="purchaseDate">Дата покупки</label>
+                <input type="text" class="form-control" id="purchaseDate" required placeholder="dd.MM.yyyy HH:mm">
+              </div>
+              <div class="form-group">
+                <label for="typeId">Тип ID</label>
+                <input type="number" class="form-control" id="typeId" required>
+              </div>
+              <button type="submit" class="btn btn-success">Сохранить</button>
+            </form>
+          </div>
+
+        </div>
+      </div>
+    </div>
+  </div>
+  <button onclick="fetchCashSales()">Получить сумму наличных продаж</button>
+  <p id="result"></p>
+</div>
+
+<script>
+  const apiUrl = 'http://localhost:8081/estore/api/purchase';
+  let purchases = [];
+
+
+  async function fetchCashSales() {
+    try {
+      const response = await fetch('http://localhost:8081/estore/api/purchase/calculate');
+      if (!response.ok) {
+        throw new Error('Network response was not ok');
+      }
+      const totalCashSales = await response.text();
+      document.getElementById('result').innerText = `Сумма наличных продаж: ${totalCashSales}`;
+    } catch (error) {
+      document.getElementById('result').innerText = `Ошибка: ${error.message}`;
+    }
+  }
+  function sortPurchases() {
+    const sortDirection = "asc";
+    fetch(`${apiUrl}?sort=purchaseDate&direction=${sortDirection}`)
+            .then(response => {
+              if (!response.ok) {
+                throw new Error('Ошибка при получении отсортированных покупок');
+              }
+              return response.json();
+            })
+            .then(data => {
+              purchases = data;
+              renderPurchaseTable();
+            })
+            .catch(error => {
+              alert('Ошибка: ' + error.message);
+              console.error('Ошибка:', error);
+            });
+  }
+  // Функция для получения всех покупок
+  function fetchPurchases() {
+    fetch(apiUrl)
+            .then(response => {
+              if (!response.ok) {
+                throw new Error('Ошибка при получении покупок');
+              }
+              return response.json();
+            })
+            .then(data => {
+              purchases = data;
+              renderPurchaseTable();
+            })
+            .catch(error => {
+              alert('Ошибка: ' + error.message);
+              console.error('Ошибка:', error);
+            });
+  }
+  document.getElementById('referenceLink').onclick = function() {
+    const referenceSections = document.getElementById('referenceSections');
+    referenceSections.style.display = referenceSections.style.display === 'none' ? 'block' : 'none';
+  };
+  function formatDate(dateString) {
+    if (!dateString) {
+      return 'N/A';
+    }
+    const date = new Date(dateString);
+    if (isNaN(date.getTime())) {
+      return 'Invalid date';
+    }
+    const day = String(date.getDate()).padStart(2, '0');
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const year = date.getFullYear();
+    const hours = String(date.getHours()).padStart(2, '0');
+    const minutes = String(date.getMinutes()).padStart(2, '0');
+
+    return `${day}.${month}.${year} ${hours}:${minutes}`;
+  }
+
+  function renderPurchaseTable() {
+    const tbody = document.getElementById('purchaseTableBody');
+    tbody.innerHTML = '';
+    purchases.forEach((purchase, index) => {
+      const row = `<tr>
+            <td>${purchase.id}</td>
+            <td>${purchase.electroItemId}</td>
+            <td>${purchase.employeeId}</td>
+            <td>${purchase.shopId}</td>
+            <td>${formatDate(purchase.purchaseDate)}</td>
+            <td>${purchase.typeId}</td>
+            <td>
+                <button class="btn btn-warning" onclick="openPurchaseForm(${index})">Редактировать</button>
+
+            </td>
+        </tr>`;
+      tbody.innerHTML += row;
+    });
+  }
+  function openPurchaseForm(index = -1) {
+    const modalTitle = document.getElementById('modalTitle');
+    const purchaseId = document.getElementById('purchaseId');
+    const electroItemId = document.getElementById('electroItemId');
+    const employeeId = document.getElementById('employeeId');
+    const shopId = document.getElementById('shopId');
+    const purchaseDate = document.getElementById('purchaseDate');
+    const typeId = document.getElementById('typeId');
+
+    if (index === -1) {
+      modalTitle.textContent = 'Добавить покупку';
+      purchaseForm.reset();
+      purchaseId.value = '';
+    } else {
+      modalTitle.textContent = 'Редактировать покупку';
+      const purchase = purchases[index];
+      purchaseId.value = purchase.id;
+      electroItemId.value = purchase.electroItemId;
+      employeeId.value = purchase.employeeId;
+      shopId.value = purchase.shopId;
+      purchaseDate.value = formatDate(purchase.purchaseDate);
+      typeId.value = purchase.typeId;
+    }
+    document.getElementById('formContainer').style.display = 'block';
+    $('#purchaseModal').modal('show');
+  }
+  function closePurchaseForm() {
+    $('#purchaseModal').modal('hide');
+    document.getElementById('formContainer').style.display = 'none';
+  }
+
+  document.getElementById('purchaseForm').onsubmit = function (event) {
+    event.preventDefault();
+    const purchaseId = document.getElementById('purchaseId').value;
+
+    const purchase = {
+      id: purchaseId ? parseInt(purchaseId) : undefined,
+      electroItemId: parseInt(document.getElementById('electroItemId').value),
+      employeeId: parseInt(document.getElementById('employeeId').value),
+      shopId: parseInt(document.getElementById('shopId').value),
+      purchaseDate: formatDateToISO(document.getElementById('purchaseDate').value),
+      typeId: parseInt(document.getElementById('typeId').value)
+    };
+
+    if (purchaseId) {
+      fetch(`${apiUrl}/${purchaseId}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(purchase)
+      })
+              .then(response => {
+                if (!response.ok) {
+                  return response.text().then(text => {
+                    throw new Error(text || 'Ошибка при обновлении покупки. Похоже товара нет в таком магазине');
+                  });
+                }
+                return response.json();
+              })
+              .then(updatedPurchase => {
+                alert('Покупка успешно обновлена!');
+                const index = purchases.findIndex(p => p.id === updatedPurchase.id);
+                purchases[index] = updatedPurchase;
+                renderPurchaseTable();
+                closePurchaseForm();
+              })
+              .catch(error => {
+                alert('Ошибка при обновлении покупки. Похоже товара нет в таком магазине');
+                console.error('Ошибка:', error);
+              });
+    } else {
+      fetch(apiUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(purchase)
+      })
+              .then(response => {
+                if (!response.ok) {
+                  return response.text().then(text => {
+                    throw new Error(text || 'Ошибка при добавлении покупки. Похоже товара нет в таком магазине');
+                  });
+                }
+                return response.json();
+              })
+              .then(newPurchase => {
+                alert('Покупка успешно добавлена!');
+                purchases.push(newPurchase);
+                renderPurchaseTable();
+                closePurchaseForm();
+              })
+              .catch(error => {
+                alert('Ошибка при добавлении покупки. Похоже товара нет в таком магазине' );
+                console.error('Ошибка:', error);
+              });
+    }
+  };
+  function formatDateToISO(dateString) {
+    const parts = dateString.split(' ');
+    const dateParts = parts[0].split('.');
+    const timeParts = parts[1].split(':');
+    return `${dateParts[2]}-${dateParts[1]}-${dateParts[0]}T${timeParts[0]}:${timeParts[1]}:00`;
+  }
+  function importPurchaseCSV() {
+    const input = document.getElementById('csvFileInput');
+    const file = input.files[0];
+
+    if (!file) {
+      alert('Пожалуйста, выберите файл для импорта.');
+      return;
+    }
+
+    const formData = new FormData();
+    formData.append('file', file);
+
+    fetch(`${apiUrl}/import`, {
+      method: 'POST',
+      body: formData
+    })
+            .then(response => {
+              return response.text().then(text => {
+                if (!response.ok) {
+                  throw new Error('Ошибка при импорте данных');
+                }
+                return text;
+              });
+            })
+            .then(message => {
+              alert(message);
+              fetchPurchases();
+            })
+            .catch(error => {
+              alert('Неверный формат csv');
+              console.error('Ошибка при импорте:', error);
+            });
+  }
+  fetchPurchases();
+</script>
+<script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@4.5.2/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

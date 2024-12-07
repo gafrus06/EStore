@@ -1,4 +1,4 @@
-package ru.isands.test.estore.dao.entity;
+package ru.isands.test.estore.dao.entity.pk;
 
 import java.io.Serializable;
 

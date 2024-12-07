@@ -1,71 +1,83 @@
 package ru.isands.test.estore.dao.entity;
 
-
 import java.io.Serializable;
 import java.util.Date;
+import java.util.List;
+import javax.persistence.*;
+import javax.validation.constraints.NotNull;
 
-import javax.persistence.Column;
-import javax.persistence.Entity;
-import javax.persistence.GeneratedValue;
-import javax.persistence.GenerationType;
-import javax.persistence.Id;
-import javax.persistence.Table;
-import javax.persistence.TableGenerator;
-
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.Getter;
 import lombok.Setter;
 
 @Getter
 @Setter
 @Entity
-@Table(name = "store_employee")
+@Table(name = "employees")
 public class Employee implements Serializable {
 
 	private static final long serialVersionUID = 1L;
-	
 	/**
 	 * Идентификатор сотрудника
 	 */
 	@Id
 	@GeneratedValue(strategy = GenerationType.TABLE, generator = "employee_counter")
-	@TableGenerator(name = "employee_counter", pkColumnName = "name", pkColumnValue = "ru.isands.test.estore.dao.entity.Employee", table = "counter", valueColumnName = "currentid", allocationSize = 2)
+	@TableGenerator(name = "employee_counter", pkColumnName = "name",
+			pkColumnValue = "ru.isands.test.estore.dao.entity.Employee",
+			table = "counter", valueColumnName = "currentid", allocationSize = 2)
 	@Column(name = "id_", unique = true, nullable = false)
 	Long id;
-	
 	/**
 	 * Фамилия сотрудника
 	 */
+	@NotNull(message = "Employee lastname must not be null")
 	@Column(name = "lastname", nullable = false, length = 100)
 	String lastName;
-	
 	/**
 	 * Имя сотрудника
 	 */
+	@NotNull(message = "Employee firstname must not be null")
 	@Column(name = "firstname", nullable = false, length = 100)
 	String firstName;
-	
 	/**
 	 * Отчество сотрудника
 	 */
+	@NotNull(message = "Employee patronymic must not be null")
 	@Column(name = "patronymic", nullable = false, length = 100)
 	String patronymic;
-	
 	/**
-	 * Дата рождения сотрудника
+	 * Дата рождения
 	 */
+	@NotNull(message = "Employee birthDate must not be null")
 	@Column(name = "birthDate", nullable = false)
 	Date birthDate;
-	
 	/**
-	 * Ссылка на должность сотрудника
+	 * Должность сотрудника
 	 */
-	@Column(name = "positionId", nullable = false)
-	Long positionId;
-	
+	@NotNull(message = "Employee positionId must not be null")
+	@ManyToOne
+	@JoinColumn(name = "positionId", nullable = false)
+	PositionType positionId;
 	/**
-	 * Пол сотрудника (true - мужской, false - женский)
+	 * Ссылка на магазиг
 	 */
+	@NotNull(message = "Employee shopId must not be null")
+	@ManyToOne
+	@JoinColumn(name = "shopId", nullable = false)
+	Shop shopId;
+	/**
+	 * Пол сотрудника
+	 */
+	@NotNull(message = "Employee gender must not be null")
 	@Column(name = "gender", nullable = false)
 	boolean gender;
+
+	@OneToMany(mappedBy = "employee")
+	List<Purchase> purchases;
+
+	@OneToMany(mappedBy = "employeeId")
+	List<ElectroEmployee> electroEmployeeList;
+
+
 
 }

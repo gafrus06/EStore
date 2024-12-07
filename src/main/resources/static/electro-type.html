@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Типы Электротоваров</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/4.5.2/css/bootstrap.min.css">
+    <style>
+        body {
+            background-color: #f8f9fa;
+            color: #000000;
+        }
+        .sidebar {
+            background-color: #5b5e60;
+            height: 100vh;
+            padding: 20px;
+            position: fixed;
+            width: 200px;
+            top: 0;
+            left: 0;
+        }
+        .sidebar a {
+            color: white;
+            text-decoration: none;
+            display: block;
+            padding: 10px;
+        }
+        .sidebar a:hover {
+            background-color: #5b5e60;
+        }
+        .content {
+            margin-left: 220px;
+            padding: 20px;
+        }
+        .table {
+            width: 100%;
+            margin-bottom: 1rem;
+            color: #212529;
+            border-collapse: collapse;
+        }
+        .table th, .table td {
+            border: 1px solid #dee2e6;
+            padding: 8px;
+        }
+        .modal-content {
+            background-color: #5b5e60;
+            color: white;
+        }
+        .modal-header, .modal-footer {
+            border: none;
+        }
+        .form-control, .btn {
+            background-color: #5b5e60;
+            color: white;
+        }
+        .form-control:focus {
+            background-color: #5b5e60;
+            color: white;
+        }
+        #electroTypeModal {
+            position: absolute;
+            top: 20%;
+            left: 50%;
+            transform: translate(-50%, -20%);
+        }
+    </style>
+</head>
+<body>
+<div class="sidebar">
+    <h2>Разделы</h2>
+    <a href="http://localhost:8081/items">Электротовары</a>
+    <a href="http://localhost:8081/employee">Сотрудники</a>
+    <a href="http://localhost:8081/purchase">Покупки</a>
+    <a href="#" id="referenceLink">Справочники</a>
+    <div id="referenceSections" style="display: none; margin-left: 10px;">
+        <a href="http://localhost:8081/position-type">Тип должности</a>
+        <a href="http://localhost:8081/shops">Магазины</a>
+        <a href="http://localhost:8081/purchase-type">Типы покупок</a>
+        <a href="http://localhost:8081/electro-type">Типы электротоваров</a>
+    </div>
+</div>
+
+<div class="content">
+    <h2>Типы Электротоваров</h2>
+    <button class="btn btn-primary" onclick="openElectroTypeForm()">Добавить Тип Электротовара</button>
+    <button class="btn btn-secondary" onclick="document.getElementById('csvFileInput').click()">Импорт из CSV</button>
+    <input type="file" id="csvFileInput" style="display: none;" accept=".csv" onchange="importCSV()">
+    <table class="table">
+        <thead>
+        <tr>
+            <th>ID</th>
+            <th>Название</th>
+            <th>Действия</th>
+        </tr>
+        </thead>
+        <tbody id="electroTypeTableBody"></tbody>
+    </table>
+
+    <div id="formContainer" style="display:none;">
+        <div class="modal" id="electroTypeModal" tabindex="-1">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="modalTitle">Добавить Тип Электротовара</h5>
+                        <button type="button" class="close" onclick="closeElectroTypeForm()">&times;</button>
+                    </div>
+                    <div class="modal-body">
+                        <form id="electroTypeForm">
+                            <input type="hidden" id="electroTypeId">
+                            <div class="form-group">
+                                <label for="electroTypeName">Название</label>
+                                <input type="text" class="form-control" id="electroTypeName" required>
+                            </div>
+                            <button type="submit" class="btn btn-success">Сохранить</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    const apiUrl = 'http://localhost:8081/estore/api/electro-type';
+    let electroTypes = [];
+
+    document.addEventListener('DOMContentLoaded', function() {
+        fetchElectroTypes();
+    });
+    function fetchElectroTypes() {
+        fetch(apiUrl)
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Ошибка при получении данных');
+                }
+                return response.json();
+            })
+            .then(data => {
+                electroTypes = data;renderElectroTypeTable();
+            })
+            .catch(error => {
+                alert('Ошибка: ' + error.message);
+                console.error('Ошибка:', error);
+            });
+    }
+    document.getElementById('referenceLink').onclick = function() {
+        const referenceSections = document.getElementById('referenceSections');
+        referenceSections.style.display = referenceSections.style.display === 'none' ? 'block' : 'none';
+    };
+    function renderElectroTypeTable() {
+        const tbody = document.getElementById('electroTypeTableBody');
+        tbody.innerHTML = '';
+        electroTypes.forEach((type, index) => {
+            const row = `<tr>
+                <td>${type.id}</td>
+                <td>${type.name}</td>
+                <td>
+                    <button class="btn btn-warning" onclick="openElectroTypeForm(${index})">Редактировать</button>
+
+                </td>
+            </tr>`;
+            tbody.innerHTML += row;
+        });
+    }
+    function openElectroTypeForm(index = -1) {
+        const modalTitle = document.getElementById('modalTitle');
+        const electroTypeId = document.getElementById('electroTypeId');
+        const electroTypeName = document.getElementById('electroTypeName');
+
+        if (index === -1) {
+            modalTitle.textContent = 'Добавить Тип Электротовара';
+            electroTypeForm.reset();
+            electroTypeId.value = '';
+        } else {
+            modalTitle.textContent = 'Редактировать Тип Электротовара';
+            const electroType = electroTypes[index];
+            electroTypeId.value = electroType.id;
+            electroTypeName.value = electroType.name;
+        }
+        document.getElementById('formContainer').style.display = 'block';
+        $('#electroTypeModal').modal('show');
+    }
+
+    function closeElectroTypeForm() {
+        $('#electroTypeModal').modal('hide');
+        document.getElementById('formContainer').style.display = 'none';
+    }
+
+    document.getElementById('electroTypeForm').onsubmit = function (event) {
+        event.preventDefault();
+        const electroTypeIdValue = document.getElementById('electroTypeId').value;
+
+        const electroType = {
+            id: electroTypeIdValue ? parseInt(electroTypeIdValue) : undefined,
+            name: document.getElementById('electroTypeName').value
+        };
+
+        if (electroTypeIdValue) {
+            fetch(`${apiUrl}/${electroTypeIdValue}`, {
+            method: 'PUT',
+                headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(electroType)
+        })
+    .then(response => response.json())
+            .then(updatedType => {
+                alert('Тип электротовара успешно обновлен!');
+                const index = electroTypes.findIndex(t => t.id === updatedType.id);
+                electroTypes[index] = updatedType;
+                renderElectroTypeTable();
+                closeElectroTypeForm();
+            })
+            .catch(error => {
+                alert('Ошибка при обновлении типа электротовара: ' + error.message);
+                console.error('Ошибка:', error);
+            });
+    } else {
+        fetch(apiUrl, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(electroType)
+        })
+            .then(response => response.json())
+            .then(newType => {
+                alert('Тип электротовара успешно добавлен!');
+                electroTypes.push(newType);
+                renderElectroTypeTable();
+                closeElectroTypeForm();
+            })
+            .catch(error => {
+                alert('Ошибка при добавлении типа электротовара: ' + error.message);
+                console.error('Ошибка:', error);
+            });
+    }
+    };
+    function importCSV() {
+        const input = document.getElementById('csvFileInput');
+        const file = input.files[0];
+
+        if (!file) {
+            alert('Пожалуйста, выберите файл для импорта.');
+            return;
+        }
+
+        const formData = new FormData();
+        formData.append('file', file);
+
+        fetch(`${apiUrl}/import`, {
+            method: 'POST',
+            body: formData
+        })
+            .then(response => {
+                return response.text().then(text => {
+                    if (!response.ok) {
+                        throw new Error(text || 'Ошибка при импорте данных');
+                    }
+                    return text;
+                });
+            })
+            .then(message => {
+                alert(message);
+                fetchElectroTypes();
+            })
+            .catch(error => {
+                alert('Ошибка: ' + error.message);
+                console.error('Ошибка при импорте:', error);
+            });
+    }
+
+
+    fetchElectroTypes();
+</script>
+<script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@4.5.2/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

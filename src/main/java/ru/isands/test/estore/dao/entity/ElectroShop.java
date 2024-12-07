@@ -1,38 +1,39 @@
 package ru.isands.test.estore.dao.entity;
 
-import javax.persistence.Column;
-import javax.persistence.Entity;
-import javax.persistence.Id;
-import javax.persistence.IdClass;
-import javax.persistence.Table;
+import javax.persistence.*;
+import javax.validation.constraints.NotNull;
 
 import lombok.Getter;
 import lombok.Setter;
+import ru.isands.test.estore.dao.entity.pk.ElectroShopPK;
 
 @Getter
 @Setter
 @Entity
 @IdClass(ElectroShopPK.class)
-@Table(name = "store_eshop")
+@Table(name = "electro_shop")
 public class ElectroShop {
-	
+
 	/**
 	 * Идентификатор магазина
 	 */
 	@Id
-	@Column(name = "shopId", nullable = false)
-	Long shopId;
-	
+	@ManyToOne
+	@JoinColumn(name = "shopId", referencedColumnName = "id_", nullable = false)
+	private Shop shopId;
 	/**
-	 * Идентификатор электротовара
+	 * Идентификатор товара
 	 */
 	@Id
-	@Column(name = "electroItemId", nullable = false)
-	Long electroItemId;
-	
+	@ManyToOne
+	@JoinColumn(name = "electroItemId", referencedColumnName = "id_", nullable = false)
+	private ElectroItem electroItemId;
+
 	/**
-	 * Оставшееся количество
+	 * Оставшееся количество товара в магазине
 	 */
 	@Column(name = "count_", nullable = false)
-	int count;
+	@NotNull(message = "ElectroShop count must not be null")
+	private int count;
 }
+
